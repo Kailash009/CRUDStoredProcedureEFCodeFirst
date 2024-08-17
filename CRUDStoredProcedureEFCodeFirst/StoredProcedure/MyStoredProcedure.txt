@@ -1,0 +1,142 @@
+﻿ALTER proc Student_CRUD
+(
+@action nvarchar(50),
+@id int=0,
+@name nvarchar(50)=null,
+@age int=0,
+@address nvarchar(100)=null,
+@mobileno nvarchar(20)=null,
+@city nvarchar(50)=null,
+@fee decimal(25,2)=0
+)  
+as begin
+SET NOCOUNT ON;
+if(@action='Create')
+begin
+insert into Students(name,age,saddress,mobileno,city,fees) values(@name,@age,@address,@mobileno,@city,@fee)
+SELECT SCOPE_IDENTITY() AS id; 
+end
+else if(@action='Update')
+begin
+update Students set name=@name,age=@age,saddress=@address,mobileno=@mobileno,city=@city,fees=@fee where id=@id 
+SELECT SCOPE_IDENTITY() AS id;
+end
+else if(@action='Delete')
+begin
+delete from Students where id=@id
+SELECT SCOPE_IDENTITY() AS id;
+end
+else if(@action='Select_Single')
+begin
+select * from Students where id=@id
+end
+else if(@action='SelectAll')
+begin
+select * from Students
+end
+end
+
+-----------------------
+Testing Proc:-
+-----------------------
+exec Student_CRUD 'SelectAll'
+exec Student_CRUD 'Select_Single',2
+exec Student_CRUD 'Create',0,'ram',23,'preet vihar','89897911','Goa',337373.12
+SELECT SCOPE_IDENTITY() AS Id;
+====================================================================================================================
+FromSqlRaw method is used to execute SQL commands against the database and returns the instance of DbSet.
+ExecuteSqlRawAsync is used to execute the SQL commands and returns the number of rows affected.
+ExecuteSqlInterpolatedAsync executes the SQL command and returns the number of affected rows.
+====================================================================================================================
+Stored Procedure in Entity Framework Core:-
+-------------------------------------------------
+Entity Framework Core supports executing stored procedures in a way that allows you to leverage the full power of SQL Server while still using the high-level abstractions and 
+features of EF Core. Below are the key concepts,keywords, and theory behind using stored procedures in EF Core.
+Key Concepts:-
+Stored Procedures: These are precompiled collections of SQL statements that are stored under a name and processed as a unit. They can accept parameters and return results.
+Entity Framework Core (EF Core): This is an object-relational mapper (ORM) for .NET that allows you to interact with databases using .NET objects, 
+effectively abstracting the database interactions.
+Keywords and Methods:-
+-----------------------------
+FromSqlRaw: Executes a raw SQL query and returns the results as entities. Use this for SELECT statements.
+ExecuteSqlRaw: Executes a raw SQL command. Use this for non-query commands like INSERT, UPDATE, DELETE.
+SqlParameter: Represents a parameter to a SqlCommand and optionally, its mapping to DataSet columns. Useful for passing parameters to stored procedures.
+Task: Represents an asynchronous operation.
+Theory Behind Using Stored Procedures
+1. Performance
+Stored procedures are precompiled and cached, which can lead to performance improvements compared to dynamic SQL.
+2. Security
+Stored procedures can help mitigate SQL injection attacks by separating the SQL code from the data.
+3. Encapsulation
+Stored procedures encapsulate business logic at the database level, making it easier to manage and update without changing application code.
+4. Maintenance
+Stored procedures can simplify maintenance by centralizing logic in the database, which can be especially useful in large applications with multiple database clients.
+2. Entity Framework Core (EF Core)
+EF Core is an ORM that allows developers to work with databases using .NET objects. It provides high-level abstractions for database operations and supports LINQ for querying. Key features related to stored procedures include:
+FromSqlRaw: Executes raw SQL queries or stored procedures that return entities.
+ExecuteSqlRaw: Executes raw SQL commands, typically used for non-query operations like INSERT, UPDATE, DELETE.
+SqlParameter: Represents parameters for SQL commands, ensuring safe and correct parameter passing.
+5. Client-Side Processing
+In some cases, further processing of the data retrieved by stored procedures might be necessary. 
+This is done by converting the result to an IEnumerable or List and performing LINQ operations on the client side.
+public async Task<IActionResult> Index()
+{
+    var students = await _context.GetStudentsAsync();
+    var filteredStudents = students.Where(s => s.Age > 20).ToList();
+    return View(filteredStudents);
+}
+Conclusion:-
+Using stored procedures with Entity Framework Core provides a powerful way to interact with the database while leveraging the benefits of both stored procedures and the high-level abstractions of EF Core. The combination allows for optimized performance, enhanced security, and centralized business logic management, 
+making it an effective approach for complex database operations.
+When working with stored procedures in Entity Framework Core, you utilize specific keywords and methods to execute these procedures efficiently. 
+Here are the primary keywords and methods used:
+Keywords and Methods
+FromSqlRaw
+Purpose: Executes a raw SQL query that returns entities.
+Usage: Typically used for SELECT stored procedures.
+FromSqlInterpolated
+Purpose: Executes a raw SQL query with interpolated parameters that returns entities.
+Usage: Similar to FromSqlRaw, but with interpolated string syntax for safer parameter inclusion.
+var city = "New York";
+var students = context.Students.FromSqlInterpolated($"EXEC GetStudentsByCity {city}").ToList();
+ExecuteSqlRaw
+Purpose: Executes a raw SQL command, typically used for non-query operations like INSERT, UPDATE, DELETE.
+Usage: Used for executing stored procedures that do not return entities.
+await context.Database.ExecuteSqlRawAsync("EXEC InsertStudent @Name, @Age, @Address", parameters);
+ExecuteSqlInterpolated
+Purpose: Executes a raw SQL command with interpolated parameters, similar to ExecuteSqlRaw.
+Usage: Ensures parameters are safely included using interpolated string syntax.
+var name = "John Doe";
+var age = 25;
+await context.Database.ExecuteSqlInterpolatedAsync($"EXEC InsertStudent {name}, {age}");
+SqlParameter
+Purpose: Represents a parameter to a SqlCommand and optionally, its mapping to DataSet columns.
+Usage: Used to safely pass parameters to stored procedures.
+var parameters = new[]
+{
+    new SqlParameter("@Name", "John Doe"),
+    new SqlParameter("@Age", 25)
+};
+ToListAsync:-
+Purpose: Asynchronously enumerates the query results and returns a list.
+Usage: Converts the results of a query to a list asynchronously.
+var students = await context.Students.FromSqlRaw("EXEC GetStudents").ToListAsync();
+Example Usage
+1. Executing a SELECT Stored Procedure
+Stored Procedure:
+CREATE PROCEDURE GetStudents
+AS
+BEGIN
+    SELECT Id, Name, Age, Address, MobileNo, City, Fee FROM Students
+END
+EF Core:
+public async Task<List<Student>> GetStudentsAsync()
+{
+    return await context.Students.FromSqlRaw("EXEC GetStudents").ToListAsync();
+}
+Summary:-
+------------
+When using stored procedures in Entity Framework Core, the primary keywords and methods are FromSqlRaw, FromSqlInterpolated, ExecuteSqlRaw, ExecuteSqlInterpolated, 
+SqlParameter, and ToListAsync.These tools allow for efficient and secure execution of stored procedures, leveraging both the power of SQL and 
+the convenience of EF Core’s high-level abstractions.
+===========================================================================================================================================================
